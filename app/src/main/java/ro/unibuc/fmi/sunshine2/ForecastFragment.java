@@ -1,5 +1,6 @@
 package ro.unibuc.fmi.sunshine2;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
@@ -17,6 +18,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,6 +37,7 @@ import java.util.List;
 public class ForecastFragment extends Fragment {
 
     private ArrayAdapter<String> mForecastAdapter;
+    private Context context;
 
     public ForecastFragment() {
     }
@@ -63,6 +68,7 @@ public class ForecastFragment extends Fragment {
                         weekForecast);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        context = rootView.getContext();
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
@@ -170,9 +176,6 @@ public class ForecastFragment extends Fragment {
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
-            for (String s : resultStrs) {
-                Log.v(LOG_TAG, "Forecast entry: " + s);
-            }
             return resultStrs;
 
         }
@@ -196,6 +199,29 @@ public class ForecastFragment extends Fragment {
             String units = "metric";
             int numDays = 7;
 
+            // TODO: sanitize this
+            String query = params[0];
+
+            long currentTime =  System.currentTimeMillis();
+            File forecastCache = new File(context.getCacheDir(), "http" + query);
+
+            // consider cache data to be outdated after 10 minutes
+            if (forecastCache.exists() &&
+                    forecastCache.lastModified() >= currentTime - 10 * 60 * 1000) {
+                try {
+                    FileInputStream fileInputStream = new FileInputStream(forecastCache);
+                    byte[] buffer = new byte[2048];
+                    fileInputStream.read(buffer, 0, 2048);
+                    fileInputStream.close();
+                    Log.v(LOG_TAG, "Read json from file");
+                    return getWeatherDataFromJson(new String(buffer), numDays);
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, e.getMessage(), e);
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
             try {
                 // Construct the URL for the OpenWeatherMap query
                 // Possible parameters are avaiable at OWM's forecast API page, at
@@ -209,7 +235,7 @@ public class ForecastFragment extends Fragment {
                 final String APPID_PARAM = "APPID";
 
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-                        .appendQueryParameter(QUERY_PARAM, params[0])
+                        .appendQueryParameter(QUERY_PARAM, query)
                         .appendQueryParameter(FORMAT_PARAM, format)
                         .appendQueryParameter(UNITS_PARAM, units)
                         .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
@@ -217,8 +243,6 @@ public class ForecastFragment extends Fragment {
                         .build();
 
                 URL url = new URL(builtUri.toString());
-
-                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -248,11 +272,10 @@ public class ForecastFragment extends Fragment {
                 }
                 forecastJsonStr = buffer.toString();
 
-                Log.v(LOG_TAG, "Forecast string: " + forecastJsonStr);
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
-                // If the code didn't successfully get the weather data, there's no point in attemping
-                // to parse it.
+                // If the code didn't successfully get the weather data,
+                // there's no point in attempting to parse it.
                 return null;
             } finally {
                 if (urlConnection != null) {
@@ -268,8 +291,12 @@ public class ForecastFragment extends Fragment {
             }
 
             try {
+                FileOutputStream fileOutputStream = new FileOutputStream(forecastCache, false);
+                fileOutputStream.write(forecastJsonStr.getBytes(), 0, forecastJsonStr.length());
+                fileOutputStream.close();
+                Log.v(LOG_TAG, "Written json to file");
                 return getWeatherDataFromJson(forecastJsonStr, numDays);
-            } catch (JSONException e) {
+            } catch (Exception e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
             }
@@ -282,9 +309,7 @@ public class ForecastFragment extends Fragment {
         protected void onPostExecute(String[] result) {
             if (result != null) {
                 mForecastAdapter.clear();
-                for(String dayForecastStr : result) {
-                    mForecastAdapter.add(dayForecastStr);
-                }
+                mForecastAdapter.addAll(result);
             }
         }
     }
