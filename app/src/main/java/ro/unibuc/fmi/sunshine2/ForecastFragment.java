@@ -2,8 +2,10 @@ package ro.unibuc.fmi.sunshine2;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.format.Time;
@@ -79,7 +81,8 @@ public class ForecastFragment extends Fragment {
         listView.setAdapter(mForecastAdapter);
 
         FetchWeatherTask weatherTask = new FetchWeatherTask();
-        weatherTask.execute("Bucharest,RO");
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+        weatherTask.execute(pref.getString(getString(R.string.location_key), getString(R.string.default_location)));
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
