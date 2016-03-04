@@ -6,4 +6,15 @@
     <string name="location_title">Location</string>
     <string name="location_key" translatable="false">location</string>
     <string name="default_location" translatable="false">Bucharest,RO</string>
+    <string name="units_title">Units</string>
+    <string name="units_key">units</string>
+    <string name="default_unit">celsius</string>
+    <string-array name="units_names">
+        <item>Celsius</item>
+        <item>Fahrenheit</item>
+    </string-array>
+    <string-array name="units_keys" translatable="false">
+        <item>celsius</item>
+        <item>fahrenheit</item>
+    </string-array>
 </resources>

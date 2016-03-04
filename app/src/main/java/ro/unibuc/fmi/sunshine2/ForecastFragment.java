@@ -80,19 +80,23 @@ public class ForecastFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
 
-        FetchWeatherTask weatherTask = new FetchWeatherTask();
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-        weatherTask.execute(pref.getString(getString(R.string.location_key), getString(R.string.default_location)));
-
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(context, DetailActivity.class).putExtra(Intent.EXTRA_TEXT, ((TextView)view).getText());
+                Intent intent = new Intent(context, DetailActivity.class).putExtra(Intent.EXTRA_TEXT, ((TextView) view).getText());
                 startActivity(intent);
             }
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+        weatherTask.execute(pref.getString(getString(R.string.location_key), getString(R.string.default_location)));
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -114,11 +118,23 @@ public class ForecastFragment extends Fragment {
          */
         private String formatHighLows(double high, double low) {
             // For presentation, assume the user doesn't care about tenths of a degree.
-            long roundedHigh = Math.round(high);
-            long roundedLow = Math.round(low);
+            long roundedHigh;
+            long roundedLow;
 
-            String highLowStr = roundedHigh + "/" + roundedLow;
-            return highLowStr;
+            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+            if (pref.getString(getString(R.string.units_key), getString(R.string.default_unit))
+                    .equals(getString(R.string.default_unit)))
+            {
+                roundedHigh = Math.round(high);
+                roundedLow = Math.round(low);
+            }
+            else
+            {
+                roundedHigh = Math.round(high * 1.8 +32);
+                roundedLow = Math.round(low * 1.8 +32);
+            }
+
+            return roundedHigh + " / " + roundedLow;
         }
 
         /**
