@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,7 +27,16 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_detail, menu);
+        MenuItem shareItem = menu.findItem(R.id.action_share);
+        ShareActionProvider forecastShareActionProvider =
+                (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
+        Intent forecastShareIntent = new Intent(Intent.ACTION_SEND);
+        Intent forecastDetailIntent = getIntent();
+        forecastShareIntent.setType("text/*");
+        forecastShareIntent.putExtra(Intent.EXTRA_TEXT,
+                forecastDetailIntent.getStringExtra(Intent.EXTRA_TEXT) + " #SunshineApp");
+        forecastShareActionProvider.setShareIntent(forecastShareIntent);
         return true;
     }
 

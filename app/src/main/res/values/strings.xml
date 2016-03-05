@@ -9,6 +9,8 @@
     <string name="units_title">Units</string>
     <string name="units_key">units</string>
     <string name="default_unit">celsius</string>
+    <string name="map_option">View on map</string>
+    <string name="share">Share</string>
     <string-array name="units_names">
         <item>Celsius</item>
         <item>Fahrenheit</item>
